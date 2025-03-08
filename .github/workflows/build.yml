@@ -34,6 +34,13 @@ jobs:
           name: compiled-x86-binary
           path: ./maman11/task1/palindrome
           retention-days: 90  # Max GitHub allows
+
+      - name: Store output
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-x86-binary
+          path: ./maman11/task1/output.txt
+          retention-days: 90  # Max GitHub allows
           
       - name: Backup artifacts to GitHub Releases (Optional)
         if: github.event_name == 'workflow_dispatch'
