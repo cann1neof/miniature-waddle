@@ -1,4 +1,4 @@
-name: Compile maman11/task1/palindrome
+name: Compile maman11/task2/count_zero_bits
 
 on:
     push:
@@ -20,26 +20,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential
 
-      - name: Compile maman11 task1 C programm
-        run: gcc -Wall -pedantic -o ./maman11/task1/palindrome ./maman11/task1/palindrome.c
+      - name: Compile maman11 task2 C programm
+        run: gcc -Wall -pedantic -o ./maman11/task2/count_zero_bits ./maman11/task2/count_zero_bits.c
 
-      - name: Run maman11 task1 C programm
+      - name: Run maman11 task2 C programm
         run: |
           set -x
-          ./maman11/task1/palindrome < ./maman11/task1/input.txt > ./maman11/task1/output.txt || echo "Program exited with a non-zero status"
+          ./maman11/task2/count_zero_bits < ./maman11/task2/input.txt > ./maman11/task2/output.txt || echo "Program exited with a non-zero status"
 
       - name: Store build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: compiled-x86-binary
-          path: ./maman11/task1/palindrome
+          path: ./maman11/task2/count_zero_bits
           retention-days: 90  # Max GitHub allows
 
       - name: Store output
         uses: actions/upload-artifact@v4
         with:
           name: compiled-output
-          path: ./maman11/task1/output.txt
+          path: ./maman11/task2/output.txt # can be adjusted to different test files
           retention-days: 90  # Max GitHub allows
           
       - name: Backup artifacts to GitHub Releases (Optional)
@@ -47,6 +47,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-x86-binary
-          files: ./maman11/task1/palindrome
+          files: ./maman11/task2/count_zero_bits
           draft: false
           prerelease: false
