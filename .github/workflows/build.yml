@@ -1,0 +1,37 @@
+name: Compile C code on x86
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install GCC
+        run: sudo apt update && sudo apt install -y gcc
+
+      - name: Compile maman11 task1 C programm
+        run: gcc -Wall -pedantic -o ./maman11/task1/palindrome ./maman11/task1/palindrome.c
+
+      - name: Run maman11 task1 C programm
+        run: |
+          set -x
+          ./maman11/task1/palindrome < input.txt > output.txt || echo "Program exited with a non-zero status"
+
+      - name: Store build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-x86-binary
+          path: my_program
+          retention-days: 90  # Max GitHub allows
+          
+      - name: Backup artifacts to GitHub Releases (Optional)
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-x86-binary
+          files: my_program
+          draft: false
+          prerelease: false
