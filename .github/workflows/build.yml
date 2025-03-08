@@ -38,7 +38,7 @@ jobs:
       - name: Store output
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-x86-binary
+          name: compiled-output
           path: ./maman11/task1/output.txt
           retention-days: 90  # Max GitHub allows
           
