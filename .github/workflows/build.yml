@@ -1,4 +1,4 @@
-name: Compile C code on x86
+name: Compile maman11/task1/palindrome
 
 on:
     push:
@@ -26,7 +26,7 @@ jobs:
       - name: Run maman11 task1 C programm
         run: |
           set -x
-          ./maman11/task1/palindrome < input.txt > output.txt || echo "Program exited with a non-zero status"
+          ./maman11/task1/palindrome < ./maman11/task1/input.txt > ./maman11/task1/output.txt || echo "Program exited with a non-zero status"
 
       - name: Store build artifacts
         uses: actions/upload-artifact@v4
