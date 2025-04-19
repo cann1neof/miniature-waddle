@@ -27,7 +27,7 @@ int palindrome(char s[]) {
 
     // compare characters from the start and end of the string
     for(i = 0; i < length / 2; i++){
-        if(s[i] !=  s[length - i - 1]) {
+        if(str[i] !=  str[length - i - 1]) {
             // if characters are not equal, return 0
             return 0;
         }

@@ -1,4 +1,4 @@
 Please enter string to be checked for palindromeness: 
-You entered: "abcde"
-Output: 0
-The string is not a palindrome
+You entered: "abb a"
+Output: 1
+The string is a palindrome
