@@ -1,52 +1,36 @@
-name: Compile maman11/task2/count_zero_bits
+name: Build & run maman11/task2 with Makefile
 
 on:
-    push:
-      branches: [main]
-    pull_request:
-      branches: [main]
-    workflow_dispatch:  # Allows manual trigger
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          set -x  # Enable verbose mode
-          sudo apt-get update
-          sudo apt-get install -y build-essential
-
-      - name: Compile maman11 task2 C programm
-        run: gcc -Wall -pedantic -o ./maman11/task2/count_zero_bits ./maman11/task2/count_zero_bits.c
-
-      - name: Run maman11 task2 C programm
+      - name: Install build tools
         run: |
           set -x
-          ./maman11/task2/count_zero_bits < ./maman11/task2/input.txt > ./maman11/task2/output.txt || echo "Program exited with a non-zero status"
+          sudo apt-get update
+          sudo apt-get install -y build-essential  # gcc + make
 
-      - name: Store build artifacts
+      - name: Clean, build and run via Makefile
+        working-directory: maman11/task2
+        run: |
+          set -x
+          make clean          # ensure stale macOS binary is gone
+          make run            # builds on Linux & executes (creates output.txt)
+
+      - name: Upload output.txt
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-x86-binary
-          path: ./maman11/task2/count_zero_bits
-          retention-days: 90  # Max GitHub allows
-
-      - name: Store output
-        uses: actions/upload-artifact@v4
-        with:
-          name: compiled-output
-          path: ./maman11/task2/output.txt # can be adjusted to different test files
-          retention-days: 90  # Max GitHub allows
-          
-      - name: Backup artifacts to GitHub Releases (Optional)
-        if: github.event_name == 'workflow_dispatch'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest-x86-binary
-          files: ./maman11/task2/count_zero_bits
-          draft: false
-          prerelease: false
+          name: zero-bits-output
+          path: maman11/task2/output.txt
+          retention-days: 90
