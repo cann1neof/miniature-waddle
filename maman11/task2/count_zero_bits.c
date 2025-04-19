@@ -37,7 +37,7 @@ unsigned int count_zero_bits(unsigned int num){
 int main(int argc, char *argv[]) {
     unsigned int myNum;
     printf("Please enter your number: ");
-    scanf("%d", &myNum);
+    scanf("%u", &myNum);
     printf("\nYou enetered: %d\n", myNum);
     printf("Number of zero bits in this number including leading zeros is: %d\n", count_zero_bits(myNum));
     return 0;
