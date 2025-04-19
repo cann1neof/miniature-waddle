@@ -1,0 +1,3 @@
+Please enter your number: 
+You enetered: 1023
+Number of zero bits in this number including leading zeros is: 22

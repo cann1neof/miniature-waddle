@@ -1,0 +1,3 @@
+Please enter your number: 
+You enetered: 4294967295
+Number of zero bits in this number including leading zeros is: 0

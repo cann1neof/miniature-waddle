@@ -1,0 +1,4 @@
+Please enter string to be checked for palindromeness: 
+You entered: "madam i m adam"
+Output: 1
+The string is a palindrome

@@ -1,0 +1,4 @@
+Please enter string to be checked for palindromeness: 
+You entered: "a b c b a"
+Output: 1
+The string is a palindrome
