@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:  # manual trigger
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,19 +19,18 @@ jobs:
         run: |
           set -x
           sudo apt-get update
-          sudo apt-get install -y build-essential  # includes gcc & make
+          sudo apt-get install -y build-essential   # gcc + make
 
-      # Compile *and* execute using the Makefile
-      - name: Build and run via Makefile
+      - name: Clean, build and run via Makefile
         working-directory: maman11/task1
         run: |
           set -x
-          make run   # compiles (if needed) then runs, writes output.txt
+          make clean            # toss any pre‑built binary
+          make run              # rebuild on Linux and execute
 
-      # Upload only the program’s output
       - name: Upload output.txt
         uses: actions/upload-artifact@v4
         with:
           name: palindrome-output
           path: maman11/task1/output.txt
-          retention-days: 90   # adjust as you like
+          retention-days: 90
