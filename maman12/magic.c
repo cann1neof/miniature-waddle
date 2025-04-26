@@ -1,109 +1,155 @@
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
-#define N 3
+#define N 5
 
-typedef struct MyMessage {
-    int errorMessage;
-    int number;
-} MyMessage;
+typedef struct errors {
+    int error_NaN;
+    int error_too_few;
+    int error_too_many;
+} errors;
 
-MyMessage getNumbers(int *matrix[N][N]){
-    int numbers_cash[N*N];
-    MyMessage message;
+errors read_matrix(int matrix[N][N]){
+    char c;
+    int counter = 0;
+    int number = 0;
+    int is_number = 0;
+    int is_word_found = 0;
 
-    message.errorMessage = 0;
-    message.number = 0;
+    errors err;
+    err.error_NaN = 0;
+    err.error_too_few = 0;
+    err.error_too_many = 0;
 
-    for(int i = 0; i < N; i++){
-        for(int j = 0; j < N; j++){
-            int current_index;
-            current_index = i*N+j;
+    while(counter < N*N){
+        c = getchar();
 
-            scanf("%d", &numbers_cash[current_index]);
-            if(numbers_cash[current_index] < 1 || numbers_cash[current_index] > N*N){
-                message.errorMessage = 1;
-                message.number = numbers_cash[current_index];
-                return message;
+        if(c == EOF){
+            if(counter < N*N){
+                matrix[counter / N][counter % N] = number;
             }
-
-            for(int k = 0; k < current_index; k++){
-                if(numbers_cash[k] == numbers_cash[current_index]){
-                    message.errorMessage = 2;
-                    message.number = numbers_cash[current_index];
-                    return message;
+            break;
+        }
+        if(c == '\n' || c == ' ' || c == '\t'){
+            if(is_word_found == 1 && is_number == 1){
+                if(counter < N*N){
+                    matrix[counter / N][counter % N] = number;
                 }
+                
+                is_number = 0;
+                is_word_found = 0;
+                number = 0;
+                counter++;
             }
-            matrix[i][j] = &numbers_cash[current_index];
+            else if(is_word_found == 1 && is_number == 0){
+                err.error_NaN = 1;
+            }
+            continue;
         }
-    }
-    return message;
-}
 
-bool checkMatrix(int matrix[N][N]){
-    int sums[N*2+2];
-
-    // Calculate the sums of the rows
-    for(int i = 0; i < N; i++){
-        sums[i] = 0;
-        for(int j = 0; j < N; j++){
-            sums[i] += matrix[i][j];
+        if(c >= '0' && c <= '9'){
+            is_number = 1;
+            is_word_found = 1;
+            number = number * 10 + (c - '0');
         }
-    }
-
-    // Calculate the sums of the columns
-    for(int i = 0; i < N; i++){
-        sums[N+i] = 0;
-        for(int j = 0; j < N; j++){
-            sums[N+i] += matrix[j][i];
+        else {
+            is_number = 0;
+            is_word_found = 1;
         }
-    }
+    } 
     
-    // Calculate the sum of the main diagonals
-    sums[2*N] = 0;
-    for(int i = 0; i < N; i++){
-        for(int j = 0; j < N; j++){
-            if(i == j){
-                sums[2*N] += matrix[i][j];
-            }
-        }
+    if(counter < N*N - 1){
+        err.error_too_few = 1;
+    } else if(counter > N*N - 1){
+        err.error_too_many = 1;
     }
-
-    // Calculate the sum of the secondary diagonals
-    sums[2*N+1] = 0;
-    for(int i = 0; i < N; i++){
-        for(int j = 0; j < N; j++){
-            if(i + j == N-1){
-                sums[2*N+1] += matrix[i][j];
-            }
-        }
-    }
-
-    // Final check
-    bool isMagic = true;
-    for(int i = 1; i <= 2*N+1; i++){
-        if(sums[i] != sums[i-1]){
-            isMagic = false;
-        }
-    }
-
-    return isMagic;
+    return err;
 }
 
-int main() {
-    int matrix[N][N];
-    MyMessage errorMessage = getNumbers(matrix);
+void print_matrix(int matrix[N][N]){
+    int i, j;
+    for(i = 0; i < N; i++){
+        for(j = 0; j < N; j++){
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
 
-    if(errorMessage.errorMessage == 1){
-        printf("\nThe number %d is out of range\n", errorMessage.number);
+int is_magic_matrix(int matrix[N][N]){
+    int i, j;
+    int sum = 0;
+    int diag1 = 0;
+    int diag2 = 0;
+
+    for(i = 0; i < N; i++){
+        sum += matrix[0][i];
+    }
+
+    for(i = 0; i < N; i++){
+        int row_sum = 0;
+        for(j = 0; j < N; j++){
+            row_sum += matrix[i][j];
+        }
+        if(row_sum != sum){
+            return 0;
+        }
+    }
+
+    for(i = 0; i < N; i++){
+        int col_sum = 0;
+        for(j = 0; j < N; j++){
+            col_sum += matrix[j][i];
+        }
+        if(col_sum != sum){
+            return 0;
+        }
+    }
+
+    for(i = 0; i < N; i++){
+        diag1 += matrix[i][i];
+        diag2 += matrix[i][N - i - 1];
+    }
+
+    if(diag1 != sum || diag2 != sum){
         return 0;
     }
 
-    if(errorMessage.errorMessage == 2){
-        printf("\nThe number %d appears more than once\n", errorMessage.number);
-        return 0;
+    return sum;
+}
+
+
+int main(void)
+{
+    int m[N][N];
+    int flag = 0;
+    errors err = read_matrix(m);
+   
+    if(err.error_NaN == 1 || err.error_too_few == 1 || err.error_too_many == 1){
+        printf("Program terminated with one or multiple input errors. Please enter exactly %d numbers.\nList or errors:\n", N*N);
+        if(err.error_NaN == 1){
+            printf("\t[Error] NaN - You've entered symbol or symbols that is not a digit.\n");
+        }
+        if(err.error_too_few == 1){
+            printf("\t[Error] Too few - You've entered to few symbols for a matrix.\n");
+        }
+        if(err.error_too_many == 1){
+            printf("\t[Error] Too many - You've entered to many symbols for a matrix.\n");
+        }
+        return 1;
+    }
+    else {
+        printf("You've entered following matrix:\n");
+        print_matrix(m);
+        flag = is_magic_matrix(m);
+        if(flag == 0){
+            printf("The matrix is not a magic square.\n");
+        }
+        else {
+            printf("The matrix is a magic square, with sum = %d.\n", flag);
+        }
     }
 
-    printf("%s", checkMatrix(*matrix) ? "Magic square\n" : "Not a magic square\n");
     return 0;
 }
+
