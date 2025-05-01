@@ -1,4 +1,0 @@
-Please enter string to be checked for palindromeness: 
-You entered: "a b c d b a"
-Output: 0
-The string is not a palindrome
