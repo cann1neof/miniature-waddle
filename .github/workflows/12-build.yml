@@ -1,4 +1,4 @@
-name: Build & run maman11/task2 with Makefile
+name: Build & run maman12 with Makefile
 
 on:
   push:
