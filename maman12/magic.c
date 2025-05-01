@@ -10,7 +10,7 @@ typedef struct errors {
 } errors;
 
 errors read_matrix(int matrix[N][N]){
-    char c;
+    int c;
     int counter = 0;
     int number = 0;
     int is_number = 0;
@@ -81,13 +81,26 @@ int is_magic_matrix(int matrix[N][N]){
     int sum = 0;
     int diag1 = 0;
     int diag2 = 0;
+    int row_sum = 0;
+    int col_sum = 0;
+
+    /* check if the values are in the range 1 to N*N and unique */
+    int check[N*N] = {0};
+    for(i = 0; i < N; i++){
+        for(j = 0; j < N; j++){
+            if(matrix[i][j] < 1 || matrix[i][j] > N*N || check[matrix[i][j] - 1] == 1){
+                return 0;
+            }
+            check[matrix[i][j] - 1] = 1;
+        }
+    }
 
     for(i = 0; i < N; i++){
         sum += matrix[0][i];
     }
 
     for(i = 0; i < N; i++){
-        int row_sum = 0;
+        row_sum = 0;
         for(j = 0; j < N; j++){
             row_sum += matrix[i][j];
         }
@@ -97,7 +110,7 @@ int is_magic_matrix(int matrix[N][N]){
     }
 
     for(i = 0; i < N; i++){
-        int col_sum = 0;
+        col_sum = 0;
         for(j = 0; j < N; j++){
             col_sum += matrix[j][i];
         }
