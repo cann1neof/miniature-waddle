@@ -38,7 +38,7 @@ errors read_matrix(int matrix[N][N]){
         /* Check for EOF */
         if(c == EOF){
             /* If EOF is reached and a number was found, store it in the matrix and end the cycle*/
-            if(counter < N*N){
+            if(counter <= N*N - 1){
                 matrix[counter / N][counter % N] = number;
             }
             break;
@@ -47,7 +47,7 @@ errors read_matrix(int matrix[N][N]){
         if(c == '\n' || c == ' ' || c == '\t'){
             /* If a number was found, store it in the matrix */
             if(is_word_found == 1 && is_number == 1){
-                if(counter < N*N){
+                if(counter <= N*N - 1){
                     matrix[counter / N][counter % N] = number;
                 }
                 
@@ -121,7 +121,7 @@ int is_magic_matrix(int matrix[N][N]){
     int col_sum = 0;
 
     /* check if the values are in the range 1 to N*N and unique */
-    int check[N*N] = {0};
+    int check[N*N];
     for(i = 0; i < N; i++){
         for(j = 0; j < N; j++){
             if(matrix[i][j] < 1 || matrix[i][j] > N*N || check[matrix[i][j] - 1] == 1){
@@ -189,12 +189,12 @@ int main(int argc, char *argv[]){
             printf("\t[Error] NaN - You've entered symbol or symbols that is not a digit.\n");
         }
         if(err.error_too_few == 1){
-            printf("\t[Error] Too few - You've entered to few symbols for a matrix.\n");
+            printf("\t[Error] Too few - You've entered to few numbers for a matrix.\n");
         }
         if(err.error_too_many == 1){
-            printf("\t[Error] Too many - You've entered to many symbols for a matrix.\n");
+            printf("\t[Error] Too many - You've entered to many numbers for a matrix.\n");
         }
-        return 1;
+        return 0;
     }
     /* If no error is found, print the matrix and check if it is a magic square */
     else {
