@@ -1,0 +1,36 @@
+name: Build & run maman22 with Makefile
+
+on:
+  push:
+    branches: [main, maman-22]
+  pull_request:
+    branches: [main, maman-22]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install build tools
+        run: |
+          set -x
+          sudo apt-get update
+          sudo apt-get install -y build-essential  # gcc + make
+
+      - name: Clean, build and run via Makefile
+        working-directory: maman22/
+        run: |
+          set -x
+          make clean          # ensure stale macOS binary is gone
+          make run            # builds on Linux & executes (creates output.txt)
+
+      - name: Upload output.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-calculator-output
+          path: maman22/output.txt
+          retention-days: 90
