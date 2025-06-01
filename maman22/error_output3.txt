@@ -1,0 +1,11 @@
+Undefined command name
+Error: Argument exceeds maximum length limit
+Missing argument
+Extraneous text after end of command
+Missing argument
+Missing argument
+Missing argument
+Missing argument
+Extraneous text after end of command
+Multiple consecutive commas
+Note: Only 6 out of 16 values provided - remaining positions unchanged

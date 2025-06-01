@@ -1,0 +1,15 @@
+this_is_a_very_long_command_name_that_exceeds_the_maximum_allowed_length_for_command_names_and_should_trigger_an_error_about_maximum_length_limits_being_exceeded_which_is_exactly_what_we_want_to_test_here MAT_A
+read_mat MAT_A, this_is_a_very_long_argument_that_exceeds_the_maximum_allowed_length_for_arguments_and_should_trigger_a_buffer_overflow_protection_error_message_which_demonstrates_that_our_bounds_checking_is_working_correctly_and_preventing_potential_security_vulnerabilities_from_buffer_overflows_that_could_be_exploited_by_malicious_users_trying_to_crash_or_compromise_the_program_through_excessively_long_input_strings
+read_mat
+read_mat MAT_A,
+add_mat
+mul_scalar
+trans_mat
+print_mat
+   
+        
+
+read_mat MAT_A, 1, 2, 3,
+read_mat MAT_A,, 1, 2, 3
+read_mat MAT_A 1 2 3, 4 5, 6
+stop

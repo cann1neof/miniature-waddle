@@ -2,6 +2,7 @@
 #include "command_queue.h"
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 /* Initialize a matrix with all zeros */
 mat initialize_mat(void) {
@@ -45,12 +46,29 @@ mat* get_matrix_by_name(const char *name, mat matrices[MAT_COUNT]) {
     return NULL;  /* Invalid matrix name */
 }
 
+/* Check if a matrix contains invalid values (NaN or infinity) */
+int is_matrix_valid(mat *matrix) {
+    int i, j;
+    
+    if (!matrix) return 0;
+    
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            if (isnan(matrix->matrix[i][j]) || isinf(matrix->matrix[i][j])) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 /* Read numbers from command arguments and fill the matrix */
 void read_mat(arg_list *args, mat *target_matrix) {
     arg_node *current;
     int i, j, num_count;
     double value;
     char *arg_value, *endptr;
+    char *arg_copy; /* For safe string manipulation */
     
     if (!args || !target_matrix) {
         printf("Error: Invalid arguments for read_mat\n");
@@ -67,19 +85,48 @@ void read_mat(arg_list *args, mat *target_matrix) {
     current = get_next_argument(current);
     num_count = 0;
     
+    /* Check if no numbers provided */
+    if (!current) {
+        printf("Note: No numbers provided - matrix remains unchanged\n");
+        return;
+    }
+    
     /* Parse numbers and fill matrix sequentially */
     while (current && num_count < 16) {
         arg_value = get_argument_value(current);
         
-        /* Remove commas and parse number */
+        /* Create a copy for safe manipulation */
         if (arg_value && strlen(arg_value) > 0) {
-            if (arg_value[strlen(arg_value)-1] == ',') {
-                arg_value[strlen(arg_value)-1] = '\0'; /* Remove trailing comma */
+            arg_copy = (char*)malloc(strlen(arg_value) + 1);
+            if (!arg_copy) {
+                printf("Error: Memory allocation failed during matrix reading\n");
+                return;
+            }
+            strcpy(arg_copy, arg_value);
+            
+            /* Remove commas from copy */
+            if (arg_copy[strlen(arg_copy)-1] == ',') {
+                arg_copy[strlen(arg_copy)-1] = '\0';
             }
             
-            value = strtod(arg_value, &endptr);
+            value = strtod(arg_copy, &endptr);
             if (*endptr != '\0') {
-                printf("Error: Invalid number '%s' in read_mat\n", arg_value);
+                printf("Error: Invalid number '%s' in read_mat\n", arg_copy);
+                free(arg_copy);
+                return;
+            }
+            
+            /* Check for overflow/underflow */
+            if (value == HUGE_VAL || value == -HUGE_VAL) {
+                printf("Error: Numeric overflow in value '%s'\n", arg_copy);
+                free(arg_copy);
+                return;
+            }
+            
+            /* Check for NaN or infinity */
+            if (isnan(value) || isinf(value)) {
+                printf("Error: Invalid numeric value (NaN or infinity) in '%s'\n", arg_copy);
+                free(arg_copy);
                 return;
             }
             
@@ -88,12 +135,22 @@ void read_mat(arg_list *args, mat *target_matrix) {
             j = num_count % 4;  /* Column index */
             target_matrix->matrix[i][j] = value;
             num_count++;
+            
+            free(arg_copy);
         }
         
         current = get_next_argument(current);
     }
     
-    /* If there are more than 16 arguments, ignore them (no error message needed) */
+    /* Provide feedback about matrix filling */
+    if (num_count == 0) {
+        printf("Note: No valid numbers provided - matrix remains unchanged\n");
+    } else if (num_count < 16) {
+        printf("Note: Only %d out of 16 values provided - remaining positions unchanged\n", num_count);
+    } else if (current != NULL) {
+        /* More than 16 arguments provided */
+        printf("Note: Extra values beyond 16 were ignored\n");
+    }
 }
 
 /* Print the matrix in a nice 4x4 format */
@@ -102,6 +159,12 @@ void print_mat(mat *MAT) {
     
     if (!MAT) {
         printf("Error: Invalid matrix pointer for print_mat\n");
+        return;
+    }
+    
+    /* Check for invalid values before printing */
+    if (!is_matrix_valid(MAT)) {
+        printf("Error: Matrix contains invalid values (NaN or infinity)\n");
         return;
     }
     
@@ -123,11 +186,27 @@ void add_mat(mat *first_matrix, mat *second_matrix, mat *target_matrix) {
         return;
     }
     
+    /* Check for invalid values in source matrices */
+    if (!is_matrix_valid(first_matrix)) {
+        printf("Error: First matrix contains invalid values (NaN or infinity)\n");
+        return;
+    }
+    if (!is_matrix_valid(second_matrix)) {
+        printf("Error: Second matrix contains invalid values (NaN or infinity)\n");
+        return;
+    }
+    
     /* Matrix addition: dest[i][j] = first[i][j] + second[i][j] */
     /* Safe to do in-place since addition doesn't depend on previous results */
     for (i = 0; i < 4; i++) {
         for (j = 0; j < 4; j++) {
             target_matrix->matrix[i][j] = first_matrix->matrix[i][j] + second_matrix->matrix[i][j];
+            
+            /* Check for overflow in result */
+            if (isnan(target_matrix->matrix[i][j]) || isinf(target_matrix->matrix[i][j])) {
+                printf("Error: Numeric overflow occurred during matrix addition\n");
+                return;
+            }
         }
     }
 }
@@ -137,6 +216,16 @@ void sub_mat(mat *left_matrix, mat *right_matrix, mat *target_matrix) {
     
     if (!left_matrix || !right_matrix || !target_matrix) {
         printf("Error: Invalid matrix pointers for sub_mat\n");
+        return;
+    }
+
+    /* Check for invalid values in source matrices */
+    if (!is_matrix_valid(left_matrix)) {
+        printf("Error: Left matrix contains invalid values (NaN or infinity)\n");
+        return;
+    }
+    if (!is_matrix_valid(right_matrix)) {
+        printf("Error: Right matrix contains invalid values (NaN or infinity)\n");
         return;
     }
 
@@ -159,6 +248,16 @@ void mul_mat(mat *left_matrix, mat *right_matrix, mat *target_matrix) {
         return;
     }
     
+    /* Check for invalid values in source matrices */
+    if (!is_matrix_valid(left_matrix)) {
+        printf("Error: Left matrix contains invalid values (NaN or infinity)\n");
+        return;
+    }
+    if (!is_matrix_valid(right_matrix)) {
+        printf("Error: Right matrix contains invalid values (NaN or infinity)\n");
+        return;
+    }
+    
     /* For matrix multiplication, we need to handle in-place operations carefully
      * since each result element depends on entire rows and columns from source matrices.
      * Use temporary matrix if destination overlaps with any source matrix. */
@@ -172,6 +271,13 @@ void mul_mat(mat *left_matrix, mat *right_matrix, mat *target_matrix) {
                 for (k = 0; k < 4; k++) {
                     sum += left_matrix->matrix[i][k] * right_matrix->matrix[k][j];
                 }
+                
+                /* Check for overflow in intermediate result */
+                if (isnan(sum) || isinf(sum)) {
+                    printf("Error: Numeric overflow occurred during matrix multiplication\n");
+                    return;
+                }
+                
                 temp_matrix.matrix[i][j] = sum;
             }
         }
@@ -190,6 +296,13 @@ void mul_mat(mat *left_matrix, mat *right_matrix, mat *target_matrix) {
                 for (k = 0; k < 4; k++) {
                     sum += left_matrix->matrix[i][k] * right_matrix->matrix[k][j];
                 }
+                
+                /* Check for overflow in result */
+                if (isnan(sum) || isinf(sum)) {
+                    printf("Error: Numeric overflow occurred during matrix multiplication\n");
+                    return;
+                }
+                
                 target_matrix->matrix[i][j] = sum;
             }
         }
@@ -199,9 +312,22 @@ void mul_mat(mat *left_matrix, mat *right_matrix, mat *target_matrix) {
 /* Multiply every element in the matrix by a scalar value */
 void mul_scalar(mat *source_matrix, double scalar, mat *target_matrix) {
     int i, j;
+    double result;
     
     if (!source_matrix || !target_matrix) {
         printf("Error: Invalid matrix pointers for mul_scalar\n");
+        return;
+    }
+    
+    /* Check for invalid values in source matrix */
+    if (!is_matrix_valid(source_matrix)) {
+        printf("Error: Source matrix contains invalid values (NaN or infinity)\n");
+        return;
+    }
+    
+    /* Check for invalid scalar */
+    if (isnan(scalar) || isinf(scalar)) {
+        printf("Error: Invalid scalar value (NaN or infinity)\n");
         return;
     }
     
@@ -209,7 +335,15 @@ void mul_scalar(mat *source_matrix, double scalar, mat *target_matrix) {
     /* Safe to do in-place since each element is independent */
     for (i = 0; i < 4; i++) {
         for (j = 0; j < 4; j++) {
-            target_matrix->matrix[i][j] = source_matrix->matrix[i][j] * scalar;
+            result = source_matrix->matrix[i][j] * scalar;
+            
+            /* Check for overflow in result */
+            if (isnan(result) || isinf(result)) {
+                printf("Error: Numeric overflow occurred during scalar multiplication\n");
+                return;
+            }
+            
+            target_matrix->matrix[i][j] = result;
         }
     }
 }
@@ -221,6 +355,12 @@ void trans_mat(mat *source_matrix, mat *target_matrix) {
     
     if (!source_matrix || !target_matrix) {
         printf("Error: Invalid matrix pointers for trans_mat\n");
+        return;
+    }
+    
+    /* Check for invalid values in source matrix */
+    if (!is_matrix_valid(source_matrix)) {
+        printf("Error: Source matrix contains invalid values (NaN or infinity)\n");
         return;
     }
     

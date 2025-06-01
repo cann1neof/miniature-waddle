@@ -4,10 +4,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 
 /* Check if a string is a valid number (including decimals) */
 int is_valid_real_number(const char* str) {
     char *endptr;
+    double value;
     
     if (!str || *str == '\0') return 0;
     
@@ -16,7 +18,12 @@ int is_valid_real_number(const char* str) {
     if (*str == '\0') return 0;
     
     /* Try to convert to double */
-    strtod(str, &endptr);
+    value = strtod(str, &endptr);
+    
+    /* Check for overflow/underflow */
+    if (value == HUGE_VAL || value == -HUGE_VAL) {
+        return 0; /* Will be caught as overflow error later */
+    }
     
     /* Skip trailing whitespace */
     while (isspace(*endptr)) endptr++;
@@ -50,6 +57,8 @@ int validate_command_arguments(const char* command_name, arg_list *args) {
     int arg_count = count_arguments(args);
     arg_node *current;
     char *arg_value;
+    double test_value;
+    char *endptr;
     int i;
     
     if (!command_name || !args) {
@@ -74,6 +83,12 @@ int validate_command_arguments(const char* command_name, arg_list *args) {
             arg_value = get_argument_value(current);
             if (!is_valid_real_number(arg_value)) {
                 printf("Argument is not a real number\n");
+                return 0;
+            }
+            /* Check for numeric overflow */
+            test_value = strtod(arg_value, &endptr);
+            if (test_value == HUGE_VAL || test_value == -HUGE_VAL) {
+                printf("Error: Numeric overflow in argument '%s'\n", arg_value);
                 return 0;
             }
             current = get_next_argument(current);
@@ -134,6 +149,12 @@ int validate_command_arguments(const char* command_name, arg_list *args) {
         arg_value = get_argument_value(current);
         if (!is_valid_real_number(arg_value)) {
             printf("Argument is not a scalar\n");
+            return 0;
+        }
+        /* Check for numeric overflow in scalar */
+        test_value = strtod(arg_value, &endptr);
+        if (test_value == HUGE_VAL || test_value == -HUGE_VAL) {
+            printf("Error: Numeric overflow in scalar value '%s'\n", arg_value);
             return 0;
         }
         /* Third argument: target matrix */
@@ -298,10 +319,27 @@ char* parse_line(char *line, arg_list *args) {
         return NULL;
     }
     
+    /* Check for excessively long input line */
+    if (strlen(line) >= 1023 && line[strlen(line)-1] != '\n') {
+        printf("Error: Input line exceeds maximum length limit\n");
+        return NULL;
+    }
+    
     /* Skip leading whitespace */
     for (; *ptr && (*ptr == ' ' || *ptr == '\t' || *ptr == '\n' || *ptr == '\r'); ptr++);
     
-    if (!*ptr) return NULL; /* Empty line */
+    /* Check for empty or whitespace-only input */
+    if (!*ptr) {
+        return NULL; /* Silently ignore empty lines */
+    }
+    
+    /* Check for lines with only commas and whitespace */
+    start = ptr;
+    while (*start && (*start == ',' || *start == ' ' || *start == '\t')) start++;
+    if (!*start || *start == '\n' || *start == '\r') {
+        printf("Please enter a valid command\n");
+        return NULL;
+    }
     
     /* Extract command name (first word) */
     start = ptr;
@@ -311,6 +349,12 @@ char* parse_line(char *line, arg_list *args) {
     
     len = ptr - start;
     if (len > 0) {
+        /* Check for token buffer overflow */
+        if (len >= 255) {
+            printf("Error: Command name exceeds maximum length limit\n");
+            return NULL;
+        }
+        
         /* Dynamically allocate memory for command name */
         command_name = (char*)malloc(len + 1);
         if (!command_name) {
@@ -320,7 +364,8 @@ char* parse_line(char *line, arg_list *args) {
         strncpy(command_name, start, len);
         command_name[len] = '\0';
     } else {
-        return NULL; /* Invalid command name */
+        printf("Please enter a command\n");
+        return NULL;
     }
     
     /* Check if command name is valid */
@@ -369,17 +414,23 @@ char* parse_line(char *line, arg_list *args) {
         
         /* Get argument length and copy */
         len = ptr - start;
-        if (len > 0 && len < 256) {
+        if (len > 0 && len < 255) { /* Ensure buffer safety */
             strncpy(token_buffer, start, len);
             token_buffer[len] = '\0';
             
             if (!add_argument(args, token_buffer)) {
+                printf("Error: Failed to add argument to list\n");
                 free(command_name);
-                return NULL; /* Failed to add argument */
+                return NULL;
             }
         } else if (len == 0) {
             /* Empty argument */
             printf("Multiple consecutive commas\n");
+            free(command_name);
+            return NULL;
+        } else {
+            /* Token too long */
+            printf("Error: Argument exceeds maximum length limit\n");
             free(command_name);
             return NULL;
         }
@@ -438,6 +489,8 @@ void process_commands(mat matrices[MAT_COUNT]) {
     char *command_name;
     command_queue *queue;
     arg_list *current_args = NULL;
+    int queue_size = 0;
+    const int MAX_QUEUE_SIZE = 1000; /* Prevent queue overflow */
 
     /* Initialize command queue */
     queue = create_command_queue();
@@ -448,6 +501,12 @@ void process_commands(mat matrices[MAT_COUNT]) {
     }
 
     while (fgets(line, sizeof(line), stdin)) {
+        /* Check for queue overflow */
+        if (queue_size >= MAX_QUEUE_SIZE) {
+            printf("Error: Command queue overflow - too many pending commands\n");
+            continue;
+        }
+        
         /* Create argument list for this command */
         current_args = create_arg_list();
         if (!current_args) {
@@ -460,10 +519,6 @@ void process_commands(mat matrices[MAT_COUNT]) {
         if (command_name) {
             /* Check if command is "stop" */
             if (strcmp(command_name, "stop") == 0) {
-                /* Stop command - validate arguments and exit */
-                if (validate_command_arguments(command_name, current_args)) {
-                    printf("Stopped without an error\n");
-                }
                 free_arg_list(current_args);
                 free(command_name);
                 break;
@@ -473,9 +528,11 @@ void process_commands(mat matrices[MAT_COUNT]) {
             if (enqueue_command(queue, command_name, current_args)) {
                 /* Queue now owns the arg_list, so we don't free it */
                 current_args = NULL;
+                queue_size++;
                 
                 /* Execute immediately */
                 execute_queued_commands(queue, matrices);
+                queue_size = 0; /* Reset after execution */
             } else {
                 printf("Error: Failed to enqueue command '%s'\n", command_name);
                 free_arg_list(current_args);

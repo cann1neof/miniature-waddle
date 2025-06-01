@@ -38,6 +38,15 @@ int get_matrix_index(const char *name);
 mat* get_matrix_by_name(const char *name, mat matrices[MAT_COUNT]);
 
 /**
+ * @brief Validates that a matrix contains only finite numeric values
+ * @param matrix Pointer to matrix to validate
+ * @return 1 if matrix contains only valid values, 0 if it contains NaN or infinity
+ * @note Used internally to prevent operations on corrupted matrices
+ * @warning Returns 0 if matrix pointer is NULL
+ */
+int is_matrix_valid(mat *matrix);
+
+/**
  * @brief Reads matrix values from command arguments and fills the target matrix
  * @param args Argument list containing matrix name and up to 16 numeric values
  * @param MAT Pointer to matrix to be filled with the parsed values

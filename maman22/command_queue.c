@@ -6,20 +6,24 @@
 /* Create a new empty command queue */
 command_queue* create_command_queue(void) {
     command_queue *queue = (command_queue*)malloc(sizeof(command_queue));
-    if (queue) {
-        queue->head = NULL;
-        queue->tail = NULL;
+    if (!queue) {
+        printf("Error: Failed to allocate memory for command queue\n");
+        return NULL;
     }
+    queue->head = NULL;
+    queue->tail = NULL;
     return queue;
 }
 
 /* Create a new empty argument list */
 arg_list* create_arg_list(void) {
     arg_list *list = (arg_list*)malloc(sizeof(arg_list));
-    if (list) {
-        list->head = NULL;
-        list->tail = NULL;
+    if (!list) {
+        printf("Error: Failed to allocate memory for argument list\n");
+        return NULL;
     }
+    list->head = NULL;
+    list->tail = NULL;
     return list;
 }
 
@@ -27,13 +31,26 @@ arg_list* create_arg_list(void) {
 int add_argument(arg_list *list, const char *argument) {
     arg_node *new_node;
     
-    if (!list || !argument) return 0;
+    if (!list || !argument) {
+        printf("Error: Invalid parameters for add_argument\n");
+        return 0;
+    }
+    
+    /* Check for excessively long arguments */
+    if (strlen(argument) > 1000) {
+        printf("Error: Argument exceeds maximum allowed length\n");
+        return 0;
+    }
     
     new_node = (arg_node*)malloc(sizeof(arg_node));
-    if (!new_node) return 0;
+    if (!new_node) {
+        printf("Error: Failed to allocate memory for argument node\n");
+        return 0;
+    }
     
     new_node->argument = (char*)malloc(strlen(argument) + 1);
     if (!new_node->argument) {
+        printf("Error: Failed to allocate memory for argument string\n");
         free(new_node);
         return 0;
     }
@@ -55,13 +72,26 @@ int add_argument(arg_list *list, const char *argument) {
 int enqueue_command(command_queue *queue, const char *command_name, arg_list *arguments) {
     command_node *new_node;
     
-    if (!queue || !command_name) return 0;
+    if (!queue || !command_name) {
+        printf("Error: Invalid parameters for enqueue_command\n");
+        return 0;
+    }
+    
+    /* Check for excessively long command names */
+    if (strlen(command_name) > 100) {
+        printf("Error: Command name exceeds maximum allowed length\n");
+        return 0;
+    }
     
     new_node = (command_node*)malloc(sizeof(command_node));
-    if (!new_node) return 0;
+    if (!new_node) {
+        printf("Error: Failed to allocate memory for command node\n");
+        return 0;
+    }
     
     new_node->command_name = (char*)malloc(strlen(command_name) + 1);
     if (!new_node->command_name) {
+        printf("Error: Failed to allocate memory for command name\n");
         free(new_node);
         return 0;
     }
@@ -84,7 +114,14 @@ int enqueue_command(command_queue *queue, const char *command_name, arg_list *ar
 command_node* dequeue_command(command_queue *queue) {
     command_node *node_to_remove;
     
-    if (!queue || !queue->head) return NULL;
+    if (!queue) {
+        printf("Error: Invalid queue parameter for dequeue_command\n");
+        return NULL;
+    }
+    
+    if (!queue->head) {
+        return NULL; /* Empty queue - not an error */
+    }
     
     node_to_remove = queue->head;
     queue->head = queue->head->next;
@@ -129,7 +166,9 @@ void free_arg_list(arg_list *list) {
     current = list->head;
     while (current) {
         arg_node *next = current->next;
-        free(current->argument);
+        if (current->argument) {
+            free(current->argument);
+        }
         free(current);
         current = next;
     }
@@ -141,7 +180,9 @@ void free_arg_list(arg_list *list) {
 void free_command_node(command_node *node) {
     if (!node) return;
     
-    free(node->command_name);
+    if (node->command_name) {
+        free(node->command_name);
+    }
     free_arg_list(node->arguments);
     free(node);
 }
