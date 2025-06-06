@@ -1,0 +1,48 @@
+name: Build & run maman23 with Makefile
+
+on:
+  push:
+    branches: [main, maman-23]
+  pull_request:
+    branches: [main, maman-23]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install build tools
+        run: |
+          set -x
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Clean, build via Makefile
+        working-directory: maman23/
+        run: |
+          set -x
+          make clean
+          make
+      
+      - name: Run via Makefile
+        working-directory: maman23/
+        run: |
+          set -x
+          make run ARGS="< input.txt > output.txt"
+
+      - name: Run files redirection via Makefile
+        working-directory: maman23/
+        run: |
+          set -x
+          make run ARGS="input.txt output.txt"
+
+      - name: Upload output.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-calculator-output
+          path: maman23/output.txt
+          retention-days: 90
