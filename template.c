@@ -5,10 +5,6 @@
 int main(int argc, char *argv[]) {
 
     // Writing print statement to print hello world
-    printf("%d\n", ' ');
-    printf("%d\n", '\t');
-    printf("%d\n", '\r');
-    printf("%d\n", '\n');
-
+    printf("Hello World\n");
     return 0;
 }
